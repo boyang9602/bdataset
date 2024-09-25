@@ -21,15 +21,15 @@ import os
 import sys
 import logging
 
-from adataset.nuscenes.dataset_converter import convert_dataset as nuscenes_convert_dataset
-from adataset.nuscenes.calibration_converter import convert_calibration as nuscenes_convert_calibration
-from adataset.nuscenes.pcd_converter import convert_pcd as nuscenes_convert_pcd
-from adataset.kitti.dataset_converter import convert_dataset as kitti_convert_dataset
-from adataset.kitti.calibration_converter import convert_calibration as kitti_convert_calibration
-from adataset.kitti.pcd_converter import convert_pcd as kitti_convert_pcd
-from adataset.apolloscape.dataset_converter import convert_dataset as apolloscape_convert_dataset
-from adataset.apolloscape.calibration_converter import convert_calibration as apolloscape_convert_calibration
-from adataset.apolloscape.pcd_converter import convert_pcd as apolloscape_convert_pcd
+from bdataset.nuscenes.dataset_converter import convert_dataset as nuscenes_convert_dataset
+from bdataset.nuscenes.calibration_converter import convert_calibration as nuscenes_convert_calibration
+from bdataset.nuscenes.pcd_converter import convert_pcd as nuscenes_convert_pcd
+from bdataset.kitti.dataset_converter import convert_dataset as kitti_convert_dataset
+from bdataset.kitti.calibration_converter import convert_calibration as kitti_convert_calibration
+from bdataset.kitti.pcd_converter import convert_pcd as kitti_convert_pcd
+from bdataset.apolloscape.dataset_converter import convert_dataset as apolloscape_convert_dataset
+from bdataset.apolloscape.calibration_converter import convert_calibration as apolloscape_convert_calibration
+from bdataset.apolloscape.pcd_converter import convert_pcd as apolloscape_convert_pcd
 
 
 def process_record(args):
@@ -47,7 +47,7 @@ def process_record(args):
     if args.dataset == 'n':
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
-      kitti_convert_dataset(args.input, args.output)
+      kitti_convert_dataset(args.input, args.output, args.allowed_msgs)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -117,6 +117,10 @@ def main(args=sys.argv):
     "-t", "--type", action="store", type=str, required=False,
     default="rcd", choices=['rcd', 'cal', 'pcd'],
     help="Conversion type. rcd:record, cal:calibration, pcd:pointcloud")
+  parser.add_argument(
+    "-m", "--allowed_msgs", action="store", type=str, required=False,
+    nargs="+", choices=['velodyne64', 'imu', 'best_pose', 'pose', 'camera'],
+    default=None, help="The allowed_msgs in record file.")
 
   args = parser.parse_args(args[1:])
   logging.debug(args)

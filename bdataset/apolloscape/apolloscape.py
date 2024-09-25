@@ -19,7 +19,7 @@
 import json
 import os
 
-from adataset.apolloscape.common import Message, Pose, read_pose
+from bdataset.apolloscape.common import Message, Pose, read_pose
 
 LIDAR_NAME = "velodyne64"
 

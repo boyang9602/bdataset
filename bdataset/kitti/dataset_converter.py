@@ -25,19 +25,21 @@ from record_msg.builder import (
   ImageBuilder,
   PointCloudBuilder,
   LocalizationBuilder,
-  TransformBuilder)
-from adataset.kitti.kitti import KITTISchema, KITTI
-from adataset.kitti.geometry import Quaternion, Euler, rotation_matrix_to_euler
-from adataset.kitti.params import (
+  TransformBuilder,
+  IMUBuilder,
+  GnssBestPoseBuilder)
+from bdataset.kitti.kitti import KITTISchema, KITTI
+from bdataset.kitti.geometry import Quaternion, Euler, rotation_matrix_to_euler
+from bdataset.kitti.params import (
   kitti2apollo_lidar,
 )
 
-
 LOCALIZATION_TOPIC = '/apollo/localization/pose'
 TF_TOPIC= '/tf'
+IMU_TOPIC = '/apollo/sensor/gnss/imu'
+GNSS_BEST_POSE_TOPIC = '/apollo/sensor/gnss/best_pose'
 
-
-def dataset_to_record(kitti, record_root_path):
+def dataset_to_record(kitti, record_root_path, gnss_hz=1):
   """Construct record message and save it as record
 
   Args:
@@ -48,26 +50,46 @@ def dataset_to_record(kitti, record_root_path):
   pc_builder = PointCloudBuilder()
   localization_builder = LocalizationBuilder()
   transform_builder = TransformBuilder()
+  imu_builder = IMUBuilder()
+  gnss_builder = GnssBestPoseBuilder()
 
   with Record(record_root_path, mode='w') as record:
+    gnss_counter = -1
     for msg in kitti:
-      c, f, ego_pose, t = msg.channel, msg.file_path, msg.ego_pose, msg.timestamp
-      logging.debug("{}, {}, {}, {}".format(c, f, ego_pose, t))
+      c, f, raw_data, t = msg.channel, msg.file_path, msg.raw_data, msg.timestamp
+      logging.debug("{}, {}, {}, {}".format(c, f, raw_data, t))
       pb_msg = None
       # There're mix gray and rgb image files, so we just choose rgb image
       if c == 'image_02' or c == 'image_03':
         # KITTI image types: 'gray', 'bgr8'
         pb_msg = image_builder.build(f, 'camera', 'bgr8', t)
         channel_name = "/apollo/sensor/camera/{}/image".format(c)
+        record.write(channel_name, pb_msg, int(t*1e9))
       elif c.startswith('velodyne'):
         pb_msg = pc_builder.build_nuscenes(f, 'velodyne', t, kitti2apollo_lidar)
         channel_name = "/apollo/sensor/{}/compensator/PointCloud2".format(c)
-
-      if pb_msg:
         record.write(channel_name, pb_msg, int(t*1e9))
-
-      if ego_pose:
-        rotation = ego_pose.rotation
+      elif c == "imu":
+        # imu data
+        pb_msg = imu_builder.build(raw_data['linear_acceleration'], raw_data['angular_velocity'], t)
+        record.write(IMU_TOPIC, pb_msg, int(t*1e9))
+      elif c == "best_pose":
+        gnss_counter += 1
+        if gnss_counter % (100 // gnss_hz) != 0:
+          continue
+        # gnss best pose
+        pos_args = [raw_data['lat'], raw_data['lon'], raw_data['alt'], raw_data['undulation'], t]
+        kwargs = {}
+        for k in raw_data.keys():
+          if k in ['lat', 'lon', 'alt', 'undulation']:
+            pass
+          else:
+            kwargs[k] = raw_data[k]
+        pb_msg = gnss_builder.build(*pos_args, **kwargs)
+        record.write(GNSS_BEST_POSE_TOPIC, pb_msg, int(t*1e9))
+      elif c == "pose":
+        # ego pose
+        rotation = raw_data.rotation
         quat = Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])
         heading = quat.to_euler().yaw
 
@@ -76,17 +98,17 @@ def dataset_to_record(kitti, record_root_path):
         quat *= world_to_imu_q
 
         pb_msg = localization_builder.build(
-          ego_pose.translation, [quat.w, quat.x, quat.y, quat.z], heading, t)
+          raw_data.translation, [quat.w, quat.x, quat.y, quat.z], heading, t)
         if pb_msg:
           record.write(LOCALIZATION_TOPIC, pb_msg, int(t*1e9))
 
         pb_msg = transform_builder.build('world', 'localization',
-          ego_pose.translation, [quat.w, quat.x, quat.y, quat.z], t)
+          raw_data.translation, [quat.w, quat.x, quat.y, quat.z], t)
         if pb_msg:
           record.write(TF_TOPIC, pb_msg, int(t*1e9))
 
 
-def convert_dataset(dataset_path, record_path):
+def convert_dataset(dataset_path, record_path, allowed_msgs=None):
   """Generate apollo record file by KITTI dataset
 
   Args:
@@ -94,7 +116,7 @@ def convert_dataset(dataset_path, record_path):
       record_path (str): record file saved path
   """
   kitti_schema = KITTISchema(dataroot=dataset_path)
-  kitti = KITTI(kitti_schema)
+  kitti = KITTI(kitti_schema, allowed_msgs=allowed_msgs)
 
   print("Start to convert scene, Pls wait!")
   dataset_to_record(kitti, record_path)

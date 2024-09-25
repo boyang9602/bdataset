@@ -24,8 +24,8 @@ import pkgutil
 
 from pathlib import Path
 
-from adataset.apolloscape.geometry import Euler, rotation_matrix_to_euler
-from adataset.apolloscape.params import scape2apollo_imu, apollo2scape_imu
+from bdataset.apolloscape.geometry import Euler, rotation_matrix_to_euler
+from bdataset.apolloscape.params import scape2apollo_imu, apollo2scape_imu
 
 CALIBRATION_META_ROOT = 'calibration_meta'
 # Lidar meta

@@ -30,10 +30,10 @@ class Pose(object):
 
 
 class Message(object):
-  def __init__(self, channel=None, file_path=None, ego_pose=None,
+  def __init__(self, channel=None, file_path=None, raw_data=None,
       calibrated_sensor=None, timestamp=None) -> None:
     self.channel = channel
     self.file_path = file_path
-    self.ego_pose = ego_pose
+    self.raw_data = raw_data
     self.calibrated_sensor = calibrated_sensor
     self.timestamp = timestamp

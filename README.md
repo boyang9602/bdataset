@@ -1,3 +1,6 @@
+# bdataset
+This is a customized apollo adataset tool from https://github.com/ApolloAuto/apollo/tree/master/modules/tools/adataset
+
 ## Convert dataset
 `adataset` is used to convert datasets (nuScenes, KITTI, ApolloScape) to Apollo record file. This way we can guarantee **the consistency of training data and test data**, including sensor intrinsics and extrinsics parameter files, thus speeding up model validation.
 

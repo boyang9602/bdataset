@@ -15,22 +15,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-'''Generate apollo calibration files by kitti calibration data.'''
+'''Generate apollo calibration files by nuscenes calibration data.'''
 
 import os
 import yaml
-import numpy as np
 import pkgutil
+import numpy as np
 
 from pathlib import Path
 
-from adataset.kitti.geometry import Euler, rotation_matrix_to_euler
-from adataset.kitti.params import (
-  apollo2kitti_lidar,
-  apollo2kitti_camera,
-  apollo2kitti_imu,
-  kitti2apollo_lidar,
-  kitti2apollo_camera,
+from bdataset.nuscenes.nuscenes import NuScenesSchema, NuScenesHelper, NuScenes
+from bdataset.nuscenes.geometry import (
+  Euler,
+  Quaternion,
+  euler_to_rotation_matrix,
+  rotation_matrix_to_euler
+)
+from bdataset.nuscenes.params import (
+  apollo2nuscenes_lidar,
+  apollo2nuscenes_camera,
+  nuscenes2apollo_imu,
+  apollo2nuscenes_radar,
 )
 
 CALIBRATION_META_ROOT = 'calibration_meta'
@@ -46,7 +51,7 @@ RADAR_PARAMS_PATH = 'radar_params'
 RADAR_EXTRINSICS = 'radar_extrinsics.yaml'
 
 # Frame ID
-CAMERA_FRAME_ID = 'velodyne64'
+CAMERA_FRAME_ID = 'novatel'
 RADAR_FRAME_ID = 'novatel'
 LIDAR_FRAME_ID = 'novatel'
 
@@ -135,7 +140,7 @@ def gen_camera_intrinsics(camera_name, calibrated_sensor, calibration_file_path)
     camera_intrinsics['width'] = calibrated_sensor['width']
 
   camera_intrinsics['K'] = list(calibrated_sensor['K'])
-  camera_intrinsics['D'] = list(calibrated_sensor['D'])
+  # camera_intrinsics['D'] = list(calibrated_sensor['D'])
   # camera_intrinsics['R'] =
   # camera_intrinsics['P'] =
 
@@ -146,12 +151,12 @@ def gen_camera_intrinsics(camera_name, calibrated_sensor, calibration_file_path)
 
 
 def gen_radar_params(child_frame_id, frame_id, calibrated_sensor,
-      calibration_file_path):
+        calibration_file_path):
   """Generate radar extrinsic file
 
   Args:
       radar_name (str): radar name
-      calibrated_sensor (_type_): kitti calibrated_sensor json object
+      calibrated_sensor (_type_): nuscenes calibrated_sensor json object
       calibration_file_path (_type_): saved path
   """
   radar_meta_extrinsics = os.path.join(
@@ -176,12 +181,12 @@ def gen_radar_params(child_frame_id, frame_id, calibrated_sensor,
 
 
 def gen_velodyne_params(child_frame_id, frame_id, calibrated_sensor,
-      calibration_file_path):
+        calibration_file_path):
   """Generate lidar extrinsic file
 
   Args:
       lidar_name (str): lidar name
-      calibrated_sensor (_type_): kitti calibrated_sensor json object
+      calibrated_sensor (_type_): nuscenes calibrated_sensor json object
       calibration_file_path (str): saved path
   """
   lidar_meta_extrinsics = os.path.join(
@@ -205,116 +210,118 @@ def gen_velodyne_params(child_frame_id, frame_id, calibrated_sensor,
   save_yaml(lidar_novatel_extrinsics, lidar_extrinsics)
 
 
-def process_calib_velo_to_imu(dataset_path, calibration_file_path):
-  absolute_path = os.path.join(dataset_path, 'calib_imu_to_velo.txt')
-  calibrated_sensor = dict()
-  with open(absolute_path, 'r') as f:
-    lines = f.readlines()
-    # rotation 3x3 matrix
-    r = lines[1].lstrip('R:').split()
-    rotation = np.array(r, dtype=np.float32).reshape((3, 3))
-    # translation 1x3 list
-    t = lines[2].lstrip('T:').split()
-    translation = np.array(t, dtype=np.float32).tolist()
-    imu2lidar = _construct_transform(rotation, translation)
-    # Apollo coordinate system conversion
-    # imu2lidar * k_imu = k_lidar
-    # imu2lidar * apollo2k_imu * apollo_imu = apollo2k_lidar * apollo_lidar
-    imu_to_velo = kitti2apollo_lidar @ imu2lidar @ apollo2kitti_imu
-    velo_to_imu = np.linalg.inv(imu_to_velo)
+def process_calib_velo_to_imu(channel, calibrated_sensor, calibration_file_path):
+  qw, qx, qy, qz = calibrated_sensor['rotation']
+  q = Quaternion(qw, qx, qy, qz)
+  euler = q.to_euler()
+  r_matrix = euler_to_rotation_matrix(euler.roll, euler.pitch, euler.yaw)
+  # Apollo coordinate system conversion
+  # lidar2imu * n_lidar = n_imu
+  # lidar2imu * apollo2n_lidar * apollo_lidar = apollo2n_imu * apollo_imu
+  lidar2imu = _construct_transform(r_matrix, calibrated_sensor['translation'])
+  velo_to_imu = nuscenes2apollo_imu @ lidar2imu @ apollo2nuscenes_lidar
 
-    rotation = velo_to_imu[:3, :3]
-    roll, pitch, yaw = rotation_matrix_to_euler(rotation)
-    q = Euler(roll, pitch, yaw).to_quaternion()
-    calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
-    calibrated_sensor['translation'] = velo_to_imu[:3, 3].tolist()
+  r_matrix = velo_to_imu[:3, :3]
+  roll, pitch, yaw = rotation_matrix_to_euler(r_matrix)
+  q = Euler(roll, pitch, yaw).to_quaternion()
+  calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
+  calibrated_sensor['translation'] = velo_to_imu[:3, 3].tolist()
+  gen_velodyne_params(channel, LIDAR_FRAME_ID, calibrated_sensor, calibration_file_path)
 
-  gen_velodyne_params('velodyne64', LIDAR_FRAME_ID, calibrated_sensor,
+
+def process_calib_cam_to_imu(channel, calibrated_sensor, calibration_file_path):
+  # 1. camera extrinsics
+  qw, qx, qy, qz = calibrated_sensor['rotation']
+  q = Quaternion(qw, qx, qy, qz)
+  euler = q.to_euler()
+  r_matrix = euler_to_rotation_matrix(euler.roll, euler.pitch, euler.yaw)
+  # Apollo coordinate system conversion
+  # cam2imu * n_cam = n_imu
+  # cam2imu * apollo2n_cam * apollo_cam = apollo2n_imu * apollo_imu
+  cam2imu = _construct_transform(r_matrix, calibrated_sensor['translation'])
+  cam_to_imu = nuscenes2apollo_imu @ cam2imu @ apollo2nuscenes_camera
+
+  r_matrix = cam_to_imu[:3,:3]
+  roll, pitch, yaw = rotation_matrix_to_euler(r_matrix)
+  q = Euler(roll, pitch, yaw).to_quaternion()
+  calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
+  calibrated_sensor['translation'] = cam_to_imu[:3, 3].tolist()
+  gen_camera_extrinsics(channel, CAMERA_FRAME_ID, calibrated_sensor,
       calibration_file_path)
 
+  # 2. camera intrinsic
+  calibrated_sensor['width'] = 1600
+  calibrated_sensor['height'] = 900
 
-def process_calib_cam_to_cam(dataset_path, calibration_file_path):
-  absolute_path = os.path.join(dataset_path, 'calib_cam_to_cam.txt')
-
-  with open(absolute_path, 'r') as f:
-    total_lines = f.readlines()
-
-  total_lines = total_lines[2:]
-  for i in range(4):
-    lines = total_lines[i*8:(i+1)*8]
-    calibrated_sensor = dict()
-    s = lines[0][len('S_00:'):].strip().split()
-    wh = np.array(s, dtype=np.float32).tolist()
-    calibrated_sensor['width'] = wh[0]
-    calibrated_sensor['height'] = wh[1]
-
-    k = lines[1][len('K_00:'):].strip().split()
-    calibrated_sensor['K'] = np.array(k, dtype=np.float32).tolist()
-
-    d = lines[2][len('D_00:'):].strip().split()
-    calibrated_sensor['D'] = np.array(d, dtype=np.float32).tolist()
-
-    # Todo(zero): Need to generate cam to cam external parameters
-    # rotation
-    r = lines[3][len('R_00:'):].strip().split()
-    rotation = np.array(r, dtype=np.float32).reshape((3, 3))
-    # translation
-    t = lines[4][len('T_00:'):].strip().split()
-    translation = np.array(t, dtype=np.float32).tolist()
-    # Apollo coordinate system conversion
-    # cam2cam0 * k_cam1 = k_cam0
-    # cam2cam0 * apollo2k_camera1 * apollo_cam1 = apollo2k_camera0 * apollo_cam0
-    cam2cam0 = _construct_transform(rotation, translation)
-    cam_to_cam0 = kitti2apollo_camera @ cam2cam0 @ apollo2kitti_camera
-
-    rotation = cam_to_cam0[:3, :3]
-    roll, pitch, yaw = rotation_matrix_to_euler(rotation)
-    q = Euler(roll, pitch, yaw).to_quaternion()
-    calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
-    calibrated_sensor['translation'] = cam_to_cam0[:3, 3].tolist()
-
-    camera_name = 'camera_{:02d}'.format(i)
-    gen_camera_extrinsics(camera_name, 'camera_00', calibrated_sensor,
-        calibration_file_path)
-
-    s_rect = lines[5][len('S_rect_01:'):].strip().split()
-    s_rect_array = np.array(s_rect, dtype=np.float32).tolist()
-    r_rect = lines[6][len('S_rect_01:'):].strip().split()
-    r_rect_array = np.array(r_rect, dtype=np.float32).tolist()
-    p_rect = lines[7][len('S_rect_01:'):].strip().split()
-    p_rect_array = np.array(p_rect, dtype=np.float32).tolist()
-
-    gen_camera_intrinsics(camera_name, calibrated_sensor, calibration_file_path)
+  calibrated_sensor['K'] = calibrated_sensor['camera_intrinsic']
+  gen_camera_intrinsics(channel, calibrated_sensor, calibration_file_path)
 
 
-def process_calib_cam_to_velo(dataset_path, calibration_file_path):
-  absolute_path = os.path.join(dataset_path, 'calib_velo_to_cam.txt')
-  calibrated_sensor = dict()
-  with open(absolute_path, 'r') as f:
-    lines = f.readlines()
-    # rotation
-    r = lines[1].lstrip('R:').split()
-    rotation = np.array(r, dtype=np.float32).reshape((3, 3))
-    # translation
-    t = lines[2].lstrip('T:').split()
-    translation = np.array(t, dtype=np.float32).tolist()
-    # Apollo coordinate system conversion
-    # velo2cam * k_lidar = k_camera
-    # velo2cam * apollo2k_lidar * apollo_lidar = apollo2k_camera * apollo_camera
-    velo2cam = _construct_transform(rotation, translation)
-    velo_to_cam = kitti2apollo_camera @ velo2cam @ apollo2kitti_lidar
-    cam_to_velo = np.linalg.inv(velo_to_cam)
+def process_calib_radar_to_imu(channel, calibrated_sensor, calibration_file_path):
+  qw, qx, qy, qz = calibrated_sensor['rotation']
+  q = Quaternion(qw, qx, qy, qz)
+  euler = q.to_euler()
+  r_matrix = euler_to_rotation_matrix(euler.roll, euler.pitch, euler.yaw)
+  # Apollo coordinate system conversion
+  # radar2imu * n_radar = n_imu
+  # radar2imu * apollo2n_radar * apollo_radar = apollo2n_imu * apollo_imu
+  radar2imu = _construct_transform(r_matrix, calibrated_sensor['translation'])
+  radar_to_imu = nuscenes2apollo_imu @ radar2imu @ apollo2nuscenes_radar
 
-    rotation = cam_to_velo[:3, :3]
-    roll, pitch, yaw = rotation_matrix_to_euler(rotation)
-    q = Euler(roll, pitch, yaw).to_quaternion()
-    calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
-    calibrated_sensor['translation'] = cam_to_velo[:3, 3].tolist()
+  r_matrix = radar_to_imu[:3, :3]
+  roll, pitch, yaw = rotation_matrix_to_euler(r_matrix)
+  q = Euler(roll, pitch, yaw).to_quaternion()
+  calibrated_sensor['rotation'] = [q.w, q.x, q.y, q.z]
+  calibrated_sensor['translation'] = radar_to_imu[:3, 3].tolist()
+  gen_radar_params(channel, RADAR_FRAME_ID, calibrated_sensor, calibration_file_path)
 
-  gen_camera_extrinsics('camera', CAMERA_FRAME_ID, calibrated_sensor,
-      calibration_file_path)
+
+def gen_sensor_calibration(calibrations, calibration_file_path):
+  """Generate camera/radar/lidar extrinsic file and camera intrinsic file
+
+  Args:
+      calibrations (dict): nuscenes calibrated_sensor json objects
+      calibration_file_path (str): saved path
+  """
+  for channel, calibrated_sensor in calibrations.items():
+    if channel.startswith('LIDAR'):
+      process_calib_velo_to_imu(channel, calibrated_sensor, calibration_file_path)
+    elif channel.startswith('CAM'):
+      process_calib_cam_to_imu(channel, calibrated_sensor, calibration_file_path)
+    elif channel.startswith('RADAR'):
+      process_calib_radar_to_imu(channel, calibrated_sensor, calibration_file_path)
+    else:
+      print("Unsupported sensor: {}".format(channel))
+
+
+def dataset_to_calibration(nuscenes, calibration_root_path):
+  """Generate sensor calibration
+
+  Args:
+      nuscenes (_type_): nuscenes(one scene)
+      calibration_root_path (str): sensor calibrations saved path
+  """
+  calibration_file_path = os.path.join(
+    calibration_root_path, nuscenes.scene_token)
+
+  calibrations = dict()
+  for c, f, ego_pose, calibrated_sensor, t in nuscenes:
+    calibrations[c] = calibrated_sensor
+  gen_sensor_calibration(calibrations, calibration_file_path)
+
 
 def convert_calibration(dataset_path, calibration_root_path):
-  process_calib_velo_to_imu(dataset_path, calibration_root_path)
-  process_calib_cam_to_velo(dataset_path, calibration_root_path)
-  process_calib_cam_to_cam(dataset_path, calibration_root_path)
+  """Generate sensor calibration
+
+  Args:
+      dataset_path (str): nuscenes dataset path
+      calibration_root_path (str): sensor calibrations saved path
+  """
+  nuscenes_schema = NuScenesSchema(dataroot=dataset_path)
+  n_helper = NuScenesHelper(nuscenes_schema)
+
+  for scene_token in nuscenes_schema.scene.keys():
+    print("Start to convert scene: {}, Pls wait!".format(scene_token))
+    nuscenes = NuScenes(n_helper, scene_token)
+    dataset_to_calibration(nuscenes, calibration_root_path)
+  print("Success! Calibrations saved in '{}'".format(calibration_root_path))

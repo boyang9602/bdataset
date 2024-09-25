@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+version = "0.1.4"
+name = "bdataset"
+authors = [
+    {name = "apollo-team"}
+]
+description = "A customized dataset conversion to Apollo record tool"
+readme = "README.md"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pyproj",
+    "cyber_record",
+    "record_msg@git+https://github.com/boyang9602/record_msg.git@main#egg=record_msg"
+]
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">= 3.6"
+
+[project.scripts]
+bdataset = "bdataset.main:main"
+
+[project.urls]
+Homepage = "https://github.com/boyang9602/bdataset"
+
+[tool.setuptools]
+include-package-data = true
