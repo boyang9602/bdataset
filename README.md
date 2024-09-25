@@ -1,19 +1,25 @@
 # bdataset
-This is a customized apollo adataset tool from https://github.com/ApolloAuto/apollo/tree/master/modules/tools/adataset
+This is a customized apollo bdataset tool from https://github.com/ApolloAuto/apollo/tree/master/modules/tools/bdataset
+
+## Main difference:
+1. renamed the tool to bdataset
+2. used a custom [record_msg](https://github.com/boyang9602/record_msg) which supports IMU and GNSS data
+3. split the oxts data in KITTI into pose, imu and gnss_best_pose messages
+4. support a new arg for KITTI to filter messages for the record file. 
 
 ## Convert dataset
-`adataset` is used to convert datasets (nuScenes, KITTI, ApolloScape) to Apollo record file. This way we can guarantee **the consistency of training data and test data**, including sensor intrinsics and extrinsics parameter files, thus speeding up model validation.
+`bdataset` is used to convert datasets (nuScenes, KITTI, ApolloScape) to Apollo record file. This way we can guarantee **the consistency of training data and test data**, including sensor intrinsics and extrinsics parameter files, thus speeding up model validation.
 
 ## Install
 ```
-pip3 install adataset
+pip3 install .
 ```
 
 ## Usage
-We first introduce the use of the command, and then introduce how to use the dataset with `adataset`.
+We first introduce the use of the command, and then introduce how to use the dataset with `bdataset`.
 
 #### Command options
-The options for `adataset` command are as follows:
+The options for `bdataset` command are as follows:
 * --dataset(-d) Choose the dataset, support list `n, k, a, w`, means "n:nuScenes, k:KITTI, a:ApolloScape, w:Waymo"
 * --input(-i) Set the dataset input directory.
 * --output(-o) Set the output directory, default is the current directory.
@@ -22,14 +28,14 @@ The options for `adataset` command are as follows:
 #### Convert record files
 You can use below command to convert dataset to Apollo record file. For example convert nuScenes dataset in `dataset_path` to Apollo record. The `output` default is the current directory, and the `type` default is `rcd`.
 ```shell
-adataset -d=n -i=dataset_path
+bdataset -d=n -i=dataset_path
 ```
 The name of the nuScenes record file is `scene_token.record`, and KITTI is `result.record`, and ApolloScape is `frame_id.record`
 
 #### Convert calibration files
 You can use below command to convert dataset to apollo calibration files. There maybe multi sense in one dataset, and we create calibration files for each scene.
 ```shell
-adataset -d=n -i=dataset_path -t=cal
+bdataset -d=n -i=dataset_path -t=cal
 ```
 
 ###### Camera intrinsics
@@ -42,7 +48,7 @@ Camera intrinsics matrix. ref [link](http://docs.ros.org/en/melodic/api/sensor_m
 #### Convert PCD file
 You can use below command to convert dataset lidar pcd to normal pcl file, which can display in visualization tools such as `pcl_viewer`.
 ```shell
-adataset -d=n -i=dataset_lidar_pcd_file -t=pcd
+bdataset -d=n -i=dataset_lidar_pcd_file -t=pcd
 ```
 If you do not specify a name, the default name of the pcd file is `result.pcd`, saved in the current directory.
 
@@ -61,11 +67,11 @@ nuScenes-Mini
 Then we can use the following command to generate the "record/calibration/pcd" file.
 ```
 // record
-adataset -d=n -i=path/to/nuScenes-Mini
+bdataset -d=n -i=path/to/nuScenes-Mini
 // calibration
-adataset -d=n -i=path/to/nuScenes-Mini -t=cal
+bdataset -d=n -i=path/to/nuScenes-Mini -t=cal
 // pcd
-adataset -d=n -i=path/to/nuScenes-Mini/samples/LIDAR_TOP/n015-2018-11-21-19-38-26+0800__LIDAR_TOP__1542801007446751.pcd.bin -t=pcd
+bdataset -d=n -i=path/to/nuScenes-Mini/samples/LIDAR_TOP/n015-2018-11-21-19-38-26+0800__LIDAR_TOP__1542801007446751.pcd.bin -t=pcd
 ```
 
 #### KITTI
@@ -85,9 +91,9 @@ The KITTI raw data is as follows.
 Then we can use the following command to generate the "record/pcd" file.
 ```
 // record
-adataset -d=k -i=path/to/2011_09_26_drive_0015_sync
+bdataset -d=k -i=path/to/2011_09_26_drive_0015_sync
 // pcd
-adataset -d=k -i=path/to/2011_09_26/2011_09_26_drive_0015_sync/velodyne_points/data/0000000113.bin -t=pcd
+bdataset -d=k -i=path/to/2011_09_26/2011_09_26_drive_0015_sync/velodyne_points/data/0000000113.bin -t=pcd
 ```
 
 ###### calibration
@@ -100,7 +106,7 @@ The KITTI calibration data is as follows:
 ```
 Then we can use the following command to generate the Apollo "calibration" files.
 ```
-adataset -d=k -i=path/to/2011_09_26 -t=cal
+bdataset -d=k -i=path/to/2011_09_26 -t=cal
 ```
 
 #### ApolloScape
