@@ -24,6 +24,7 @@ The options for `bdataset` command are as follows:
 * --input(-i) Set the dataset input directory.
 * --output(-o) Set the output directory, default is the current directory.
 * --type(-t) Choose conversion type, support list `rcd, cal, pcd`, means "rcd:record, cal:calibration, pcd:pointcloud", default is `rcd`.
+* --allowed_msgs(-m) Choose the messages to be included in the record file, options are {velodyne64,imu,best_pose,pose,camera}.
 
 #### Convert record files
 You can use below command to convert dataset to Apollo record file. For example convert nuScenes dataset in `dataset_path` to Apollo record. The `output` default is the current directory, and the `type` default is `rcd`.
