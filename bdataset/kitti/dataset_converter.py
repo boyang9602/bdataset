@@ -66,7 +66,7 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
         channel_name = "/apollo/sensor/camera/{}/image".format(c)
         record.write(channel_name, pb_msg, int(t*1e9))
       elif c.startswith('velodyne'):
-        pb_msg = pc_builder.build_nuscenes(f, 'velodyne', t, kitti2apollo_lidar)
+        pb_msg = pc_builder.build_nuscenes(f, 'velodyne', t, kitti2apollo_lidar, 255)
         channel_name = "/apollo/sensor/{}/compensator/PointCloud2".format(c)
         record.write(channel_name, pb_msg, int(t*1e9))
       elif c == "imu":

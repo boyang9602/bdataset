@@ -92,7 +92,7 @@ class KITTI(object):
   def __init__(self, kitti_schema, allowed_msgs=None) -> None:
     self._kitti_schema = kitti_schema
     self._messages = []
-    self._allowed_msgs = [] if allowed_msgs is None else allowed_msgs
+    self._allowed_msgs = ['velodyne64', 'imu', 'best_pose', 'pose', 'camera'] if allowed_msgs is None else allowed_msgs
     self.read_messages()
 
   def __iter__(self):
