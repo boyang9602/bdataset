@@ -144,8 +144,8 @@ class KITTI(object):
         self._messages.append(msg)
       # imu
       if 'imu' in self._allowed_msgs:
-        linear_acc = [oxts.af, oxts.al, oxts.au]
-        angular_vel = [oxts.wf, oxts.wl, oxts.wu]
+        linear_acc = [oxts.ax, oxts.ay, oxts.az]
+        angular_vel = [oxts.wx, oxts.wy, oxts.wz]
         imu_data = {
           "linear_acceleration": linear_acc,
           "angular_velocity": angular_vel
