@@ -68,7 +68,7 @@ def load_yaml(file_path):
   """
   content = None
   # Read from 'package_data'
-  data = pkgutil.get_data('adataset', file_path)
+  data = pkgutil.get_data('bdataset', file_path)
   content = yaml.safe_load(data)
   return content
 
@@ -220,6 +220,11 @@ def process_calib_velo_to_imu(dataset_path, calibration_file_path):
     # Apollo coordinate system conversion
     # imu2lidar * k_imu = k_lidar
     # imu2lidar * apollo2k_imu * apollo_imu = apollo2k_lidar * apollo_lidar
+    # apollo2kitti_imu @ P_apollo_imu ==> P_kitti_imu
+    # imu2lidar @ P_kitti_imu ==> P_kitti_lidar
+    # kitti2apollo_lidar @ P_kitti_lidar ==> P_apollo_lidar
+    # kitti2apollo_lidar @ imu2lidar @ apollo2kitti_imu @ P_apollo_imu ==> P_apollo_lidar
+    # so imu_to_velo transfers a point in Apollo IMU reference frame to Apollo Lidar frame
     imu_to_velo = kitti2apollo_lidar @ imu2lidar @ apollo2kitti_imu
     velo_to_imu = np.linalg.inv(imu_to_velo)
 

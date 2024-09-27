@@ -73,7 +73,7 @@ def load_yaml(file_path):
   """
   content = None
   # Read from 'package_data'
-  data = pkgutil.get_data('adataset', file_path)
+  data = pkgutil.get_data('bdataset', file_path)
   content = yaml.safe_load(data)
   return content
 
