@@ -32,7 +32,8 @@ class KITTISchema(object):
   Args:
       object (_type_): _description_
   """
-  def __init__(self, dataroot=None) -> None:
+  def __init__(self, dataroot=None, oxts_path='oxts') -> None:
+    self.oxts_path = oxts_path
     self.dataroot = dataroot
     self.camera_num = 4
 
@@ -56,7 +57,7 @@ class KITTISchema(object):
     return schemes
 
   def oxts_schemes(self):
-    path_name = 'oxts'
+    path_name = self.oxts_path
     timestamps = self._read_timestamps(path_name)
     filenames = self._read_filenames(path_name)
     assert len(timestamps) == len(filenames)

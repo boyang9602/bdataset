@@ -54,7 +54,7 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
   gnss_builder = GnssBestPoseBuilder()
 
   with Record(record_root_path, mode='w') as record:
-    gnss_counter = -1
+    last_gnss_t = 0
     for msg in kitti:
       c, f, raw_data, t = msg.channel, msg.file_path, msg.raw_data, msg.timestamp
       logging.debug("{}, {}, {}, {}".format(c, f, raw_data, t))
@@ -74,9 +74,9 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
         pb_msg = imu_builder.build(raw_data['linear_acceleration'], raw_data['angular_velocity'], t)
         record.write(IMU_TOPIC, pb_msg, int(t*1e9))
       elif c == "best_pose":
-        gnss_counter += 1
-        if gnss_counter % (100 // gnss_hz) != 0:
+        if t - last_gnss_t < 0.99:
           continue
+        last_gnss_t = t
         # gnss best pose
         pos_args = [raw_data['lat'], raw_data['lon'], raw_data['alt'], raw_data['undulation'], t]
         kwargs = {}
@@ -108,14 +108,14 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
           record.write(TF_TOPIC, pb_msg, int(t*1e9))
 
 
-def convert_dataset(dataset_path, record_path, allowed_msgs=None):
+def convert_dataset(dataset_path, record_path, allowed_msgs=None, oxts_path='oxts'):
   """Generate apollo record file by KITTI dataset
 
   Args:
       dataset_path (str): KITTI dataset path
       record_path (str): record file saved path
   """
-  kitti_schema = KITTISchema(dataroot=dataset_path)
+  kitti_schema = KITTISchema(dataroot=dataset_path, oxts_path=oxts_path)
   kitti = KITTI(kitti_schema, allowed_msgs=allowed_msgs)
 
   print("Start to convert scene, Pls wait!")

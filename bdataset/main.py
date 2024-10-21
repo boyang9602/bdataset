@@ -47,7 +47,7 @@ def process_record(args):
     if args.dataset == 'n':
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
-      kitti_convert_dataset(args.input, args.output, args.allowed_msgs)
+      kitti_convert_dataset(args.input, args.output, args.allowed_msgs, args.oxts_path)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -121,6 +121,10 @@ def main(args=sys.argv):
     "-m", "--allowed_msgs", action="store", type=str, required=False,
     nargs="+", choices=['velodyne64', 'imu', 'best_pose', 'pose', 'camera'],
     default=None, help="The allowed_msgs in record file.")
+  parser.add_argument(
+    "-p", "--oxts_path", action="store", type=str, required=False,
+    choices=['oxts', 'no_dup_oxts', 'basic_intp_oxts', 'opt_intp_oxts'],
+    default='oxts', help="The relative path of oxts.")
 
   args = parser.parse_args(args[1:])
   logging.debug(args)
