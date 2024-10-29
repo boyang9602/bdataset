@@ -71,7 +71,9 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
         record.write(channel_name, pb_msg, int(t*1e9))
       elif c == "imu":
         # imu data
-        pb_msg = imu_builder.build(raw_data['linear_acceleration'], raw_data['angular_velocity'], t)
+        pb_msg = imu_builder.build(raw_data['linear_acceleration'], 
+                                   raw_data['angular_velocity'], t, 
+                                   measurement_span=raw_data.get('measurement_span', 0))
         record.write(IMU_TOPIC, pb_msg, int(t*1e9))
       elif c == "best_pose":
         if t - last_gnss_t < 0.99:

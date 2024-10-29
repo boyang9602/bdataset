@@ -131,3 +131,25 @@ class IMU(Sensor):
         self.posmode = data[27]
         self.velmode = data[28]
         self.orimode = data[29]
+
+class LoIMU:
+  def __init__(self, data):
+    self.timestamp = data[0]
+    self.measurement_span = data[1]
+    self.ax = data[2]
+    self.ay = data[3]
+    self.az = data[4]
+    self.wx = data[5]
+    self.wy = data[6]
+    self.wz = data[7]
+
+class LoGNSS:
+  def __init__(self, data):
+    self.timestamp = data[0]
+    self.lat = data[1]
+    self.lon = data[2]
+    self.alt = data[3]
+    self.roll = data[4]
+    self.pitch = data[5]
+    self.yaw = data[6]
+    self.numsats = data[7]

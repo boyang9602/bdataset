@@ -119,7 +119,7 @@ def main(args=sys.argv):
     help="Conversion type. rcd:record, cal:calibration, pcd:pointcloud")
   parser.add_argument(
     "-m", "--allowed_msgs", action="store", type=str, required=False,
-    nargs="+", choices=['velodyne64', 'imu', 'best_pose', 'pose', 'camera'],
+    nargs="+", choices=['velodyne64', 'imu', 'best_pose', 'pose', 'camera', 'lo_imu', 'lo_gnss'],
     default=None, help="The allowed_msgs in record file.")
   parser.add_argument(
     "-p", "--oxts_path", action="store", type=str, required=False,
