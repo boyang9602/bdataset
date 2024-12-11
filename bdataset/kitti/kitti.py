@@ -151,7 +151,7 @@ class KITTI(object):
           'height_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
           'datum_id': gnss_best_pose_pb2.DatumId.WGS84,
           'sol_status': gnss_best_pose_pb2.SolutionStatus.SOL_COMPUTED,
-          'sol_type': pos_mode2sol_type(int(oxts.posmode)),
+          'sol_type': pos_mode2sol_type(int(oxts.posmode))[1],
           'num_sats_tracked': int(oxts.numsats),
           'num_sats_l1': int(oxts.numsats),
           'num_sats_multi': int(oxts.numsats)

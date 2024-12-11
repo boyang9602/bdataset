@@ -87,7 +87,7 @@ POS_MODE_SOL_TYPE_MAPPING = {
 }
 
 def pos_mode2str(pos_mode):
-    for k, v in POS_MODES:
+    for k, v in POS_MODES.items():
         if v == pos_mode:
             return k
     else:
