@@ -26,6 +26,7 @@ from bdataset.kitti.geometry import Euler
 from bdataset.kitti.proj_helper import latlon2utm
 from modules.common_msgs.sensor_msgs import gnss_best_pose_pb2
 
+from bdataset.kitti.oxts2novatel import pos_mode2sol_type, pos_acc2std_dev
 
 class KITTISchema(object):
   """KITTI schema
@@ -145,12 +146,12 @@ class KITTI(object):
           'lon': oxts.lon,
           'alt': oxts.alt,
           'undulation': 0,
-          'latitude_std_dev': 0.05,
-          'longitude_std_dev': 0.05,
-          'height_std_dev': 0.05,
+          'latitude_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
+          'longitude_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
+          'height_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
           'datum_id': gnss_best_pose_pb2.DatumId.WGS84,
           'sol_status': gnss_best_pose_pb2.SolutionStatus.SOL_COMPUTED,
-          'sol_type': gnss_best_pose_pb2.SolutionType.NARROW_INT,
+          'sol_type': pos_mode2sol_type(int(oxts.posmode)),
           'num_sats_tracked': int(oxts.numsats),
           'num_sats_l1': int(oxts.numsats),
           'num_sats_multi': int(oxts.numsats)
