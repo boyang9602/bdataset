@@ -51,7 +51,7 @@ class TextSensor(BaseSensor):
   fields = None
   def __init__(self, timestamp, values: list):
     super().__init__()
-    self.timestamp = timestamp
+    self.timestamp = to_timestamp(timestamp)
     self.parse(values)
 
   def parse(self, values):

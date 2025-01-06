@@ -61,7 +61,7 @@ class KITTISchema(object):
   def original_oxts_schemes(self):
     path_name = self.oxts_path
     dtype = [
-      ('timestamp', 'f8'),
+      ('timestamp', 'U29'),
       ('float_fields', 'f8', (25,)),
       ('int_fields', 'i1', (5,))
     ]
@@ -71,7 +71,7 @@ class KITTISchema(object):
   def extended_oxts_schemes(self):
     path_name = self.oxts_path
     dtype = [
-      ('timestamp', 'f8'),
+      ('timestamp', 'U29'),
       ('float_fields', 'f8', (27,)),
       ('int_fields', 'i1', (5,))
     ]
