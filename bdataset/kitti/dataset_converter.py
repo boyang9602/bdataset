@@ -76,14 +76,14 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
                                    measurement_span=raw_data.get('measurement_span', 0))
         record.write(IMU_TOPIC, pb_msg, int(t*1e9))
       elif c == "best_pose":
-        if t - last_gnss_t < 0.99:
+        if t - last_gnss_t < 1 / gnss_hz - 0.01:
           continue
         last_gnss_t = t
         # gnss best pose
-        pos_args = [raw_data['lat'], raw_data['lon'], raw_data['alt'], raw_data['undulation'], t]
+        pos_args = [raw_data['lat'], raw_data['lon'], raw_data['height_msl'], raw_data['undulation'], t]
         kwargs = {}
         for k in raw_data.keys():
-          if k in ['lat', 'lon', 'alt', 'undulation']:
+          if k in ['lat', 'lon', 'height_msl', 'undulation']:
             pass
           else:
             kwargs[k] = raw_data[k]

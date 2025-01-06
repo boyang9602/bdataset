@@ -123,8 +123,7 @@ def main(args=sys.argv):
     default=None, help="The allowed_msgs in record file.")
   parser.add_argument(
     "-p", "--oxts_path", action="store", type=str, required=False,
-    choices=['oxts', 'no_dup_oxts', 'basic_intp_oxts', 'opt_intp_oxts'],
-    default='oxts', help="The relative path of oxts.")
+    default='oxts.csv', help="The relative path of oxts.")
 
   args = parser.parse_args(args[1:])
   logging.debug(args)

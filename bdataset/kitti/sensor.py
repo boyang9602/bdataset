@@ -24,132 +24,63 @@ def to_timestamp(sensor_time):
   time_sec = datetime.strptime(date_sec, '%Y-%m-%d %H:%M:%S')
   return datetime.timestamp(time_sec) + float(nano_sec)*1e-9
 
+"""
+Two kinds of sensors:
+1. Sensors with binary data, like pictures or point clouds
+2. Sensors with text data, like IMU
+"""
+class BaseSensor(object):
+  def __init__(self):
+    pass
 
-class Sensor(object):
-  def __init__(self, timestamp, file_path) -> None:
+class BinarySensor(BaseSensor):
+  def __init__(self, timestamp, file_path):
+    super().__init__()
     self.timestamp = to_timestamp(timestamp)
     self.file_path = file_path
-    self.parse()
 
-  def parse(self):
-    raise NotImplementedError("Must override!")
-
-
-class Lidar(Sensor):
+class Lidar(BinarySensor):
   def __init__(self, timestamp, file_path) -> None:
     super().__init__(timestamp, file_path)
 
-  def parse(self):
-    pass
-
-
-class Camera(Sensor):
+class Camera(BinarySensor):
   def __init__(self, timestamp, file_path) -> None:
     super().__init__(timestamp, file_path)
 
-  def parse(self):
-    pass
+class TextSensor(BaseSensor):
+  fields = None
+  def __init__(self, timestamp, values: list):
+    super().__init__()
+    self.timestamp = timestamp
+    self.parse(values)
 
+  def parse(self, values):
+    if OxTs.fields is None:
+      raise RuntimeError("fields have to be declared!")
+    assert len(OxTs.fields) == len(values), f"required fields ({len(OxTs.fields)}) and provided values ({len(values)}) have different lengths!"
+    for field, value in zip(OxTs.fields, values):
+      setattr(self, field, value)
 
-class IMU(Sensor):
-  def __init__(self, timestamp, file_path) -> None:
-    super().__init__(timestamp, file_path)
-    self.lat = None
-    self.lon = None
-    self.alt = None
-    self.roll = None
-    self.pitch = None
-    self.yaw = None
-    self.vn = None
-    self.ve = None
-    self.vf = None
-    self.vl = None
-    self.vu = None
-    self.ax = None
-    self.ay = None
-    self.az = None
-    self.af = None
-    self.al = None
-    self.au = None
-    self.wx = None
-    self.wy = None
-    self.wz = None
-    self.wf = None
-    self.wl = None
-    self.wu = None
-    self.pos_accuracy = None
-    self.vel_accuracy = None
-    self.navstat = None
-    self.numsats = None
-    self.posmode = None
-    self.velmode = None
-    self.orimode = None
-    self.parse()
+class OxTs(TextSensor):
+  fields = [
+    'lat', 'lon', 'alt',
+    'roll', 'pitch', 'yaw',
+    'vn', 've', 'vf', 'vl', 'vu',
+    'ax', 'ay', 'az', 'af', 'al', 'au',
+    'wx', 'wy', 'wz', 'wf', 'wl', 'wu',
+    'pos_accuracy', 'vel_accuracy',
+    'navstat', 'numsats', 
+    'posmode', 'velmode', 'orimode'
+  ]
 
-  def parse(self):
-    with open(self.file_path, 'r') as f:
-      for line in f:
-        data = line.strip().split()
-        if len(data) != 30:
-          # If length < 30 then we just read the required data
-          self.lat = float(data[0])
-          self.lon = float(data[1])
-          self.alt = float(data[2])
-          self.roll = float(data[3])
-          self.pitch = float(data[4])
-          self.yaw = float(data[5])
-          print("IMU data length error! require 30 but {}".format(len(data)))
-          continue
-
-        self.lat = float(data[0])
-        self.lon = float(data[1])
-        self.alt = float(data[2])
-        self.roll = float(data[3])
-        self.pitch = float(data[4])
-        self.yaw = float(data[5])
-        self.vn = float(data[6])
-        self.ve = float(data[7])
-        self.vf = float(data[8])
-        self.vl = float(data[9])
-        self.vu = float(data[10])
-        self.ax = float(data[11])
-        self.ay = float(data[12])
-        self.az = float(data[13])
-        self.af = float(data[14])
-        self.al = float(data[15])
-        self.au = float(data[16])
-        self.wx = float(data[17])
-        self.wy = float(data[18])
-        self.wz = float(data[19])
-        self.wf = float(data[20])
-        self.wl = float(data[21])
-        self.wu = float(data[22])
-        self.pos_accuracy = float(data[23])
-        self.vel_accuracy = float(data[24])
-        self.navstat = data[25]
-        self.numsats = data[26]
-        self.posmode = data[27]
-        self.velmode = data[28]
-        self.orimode = data[29]
-
-class LoIMU:
-  def __init__(self, data):
-    self.timestamp = data[0]
-    self.measurement_span = data[1]
-    self.ax = data[2]
-    self.ay = data[3]
-    self.az = data[4]
-    self.wx = data[5]
-    self.wy = data[6]
-    self.wz = data[7]
-
-class LoGNSS:
-  def __init__(self, data):
-    self.timestamp = data[0]
-    self.lat = data[1]
-    self.lon = data[2]
-    self.alt = data[3]
-    self.roll = data[4]
-    self.pitch = data[5]
-    self.yaw = data[6]
-    self.numsats = data[7]
+class ExtendedOxTs(TextSensor):
+  fields = [
+    'lat', 'lon', 'alt', 'height_msl', 'undulation',
+    'roll', 'pitch', 'yaw',
+    'vn', 've', 'vf', 'vl', 'vu',
+    'ax', 'ay', 'az', 'af', 'al', 'au',
+    'wx', 'wy', 'wz', 'wf', 'wl', 'wu',
+    'pos_accuracy', 'vel_accuracy',
+    'navstat', 'numsats', 
+    'posmode', 'velmode', 'orimode'
+  ]
