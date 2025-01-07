@@ -66,7 +66,7 @@ class KITTISchema(object):
       ('int_fields', 'i1', (5,))
     ]
     data = np.loadtxt(os.path.join(self.dataroot, path_name), dtype=dtype, delimiter=',', skiprows=1)
-    return [OxTs(row[0], row[1:]) for row in data]
+    return [OxTs(row[0], row[1].tolist() + row[2].tolist()) for row in data]
   
   def extended_oxts_schemes(self):
     path_name = self.oxts_path
