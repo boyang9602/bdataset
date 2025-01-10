@@ -76,12 +76,12 @@ class KITTISchema(object):
       ('int_fields', 'i1', (5,))
     ]
     data = np.loadtxt(os.path.join(self.dataroot, path_name), dtype=dtype, delimiter=',', skiprows=1)
-    return [ExtendedOxTs(row[0], row[1:]) for row in data]
+    return [ExtendedOxTs(row[0], row[1].tolist() + row[2].tolist()) for row in data]
   
   def oxts_schemes(self):
-    if self.oxts_path == 'oxts.csv':
-      return self.original_oxts_schemes()
-    return self.extended_oxts_schemes()
+    if self.oxts_path.startswith('extended'):
+      return self.extended_oxts_schemes()
+    return self.original_oxts_schemes()
 
   def _read_timestamps(self, file_path, file_name='timestamps.txt'):
     timestamps_file = os.path.join(self.dataroot, file_path, file_name)
@@ -141,7 +141,7 @@ class KITTI(object):
         euler = Euler(oxts.roll, oxts.pitch, oxts.yaw)
         q = euler.to_quaternion()
         ego_pose.set_rotation(q.w, q.x, q.y, q.z)
-        msg = Message(channel='pose', timestamp=oxts.timestamp, file_path=oxts.file_path, raw_data=ego_pose)
+        msg = Message(channel='pose', timestamp=oxts.timestamp, raw_data=ego_pose)
         self._messages.append(msg)
       # gnss, we faked some data
       if 'best_pose' in self._allowed_msgs:
@@ -160,7 +160,7 @@ class KITTI(object):
           'num_sats_l1': int(oxts.numsats),
           'num_sats_multi': int(oxts.numsats)
         }
-        msg = Message(channel='best_pose', timestamp=oxts.timestamp, file_path=oxts.file_path, raw_data=gnss_data)
+        msg = Message(channel='best_pose', timestamp=oxts.timestamp, raw_data=gnss_data)
         self._messages.append(msg)
       # imu
       if 'imu' in self._allowed_msgs:
@@ -170,7 +170,7 @@ class KITTI(object):
           "linear_acceleration": linear_acc,
           "angular_velocity": angular_vel
         }
-        msg = Message(channel='imu', timestamp=oxts.timestamp, file_path=oxts.file_path, raw_data=imu_data)
+        msg = Message(channel='imu', timestamp=oxts.timestamp, raw_data=imu_data)
         self._messages.append(msg)
     # read camera
     if 'camera' in self._allowed_msgs:

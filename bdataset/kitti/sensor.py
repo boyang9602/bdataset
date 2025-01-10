@@ -55,10 +55,10 @@ class TextSensor(BaseSensor):
     self.parse(values)
 
   def parse(self, values):
-    if OxTs.fields is None:
+    if self.fields is None:
       raise RuntimeError("fields have to be declared!")
-    assert len(OxTs.fields) == len(values), f"required fields ({len(OxTs.fields)}) and provided values ({len(values)}) have different lengths!"
-    for field, value in zip(OxTs.fields, values):
+    assert len(self.fields) == len(values), f"required fields ({len(self.fields)}) and provided values ({len(values)}) have different lengths!"
+    for field, value in zip(self.fields, values):
       setattr(self, field, value)
 
 class OxTs(TextSensor):
