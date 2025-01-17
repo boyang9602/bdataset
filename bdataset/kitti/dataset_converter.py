@@ -39,7 +39,7 @@ TF_TOPIC= '/tf'
 IMU_TOPIC = '/apollo/sensor/gnss/imu'
 GNSS_BEST_POSE_TOPIC = '/apollo/sensor/gnss/best_pose'
 
-def dataset_to_record(kitti, record_root_path, gnss_hz=1):
+def dataset_to_record(kitti, record_root_path, gnss_hz):
   """Construct record message and save it as record
 
   Args:
@@ -110,7 +110,7 @@ def dataset_to_record(kitti, record_root_path, gnss_hz=1):
           record.write(TF_TOPIC, pb_msg, int(t*1e9))
 
 
-def convert_dataset(dataset_path, record_path, allowed_msgs=None, oxts_path='oxts'):
+def convert_dataset(dataset_path, record_path, allowed_msgs=None, oxts_path='oxts', gnss_hz=1):
   """Generate apollo record file by KITTI dataset
 
   Args:
@@ -121,5 +121,5 @@ def convert_dataset(dataset_path, record_path, allowed_msgs=None, oxts_path='oxt
   kitti = KITTI(kitti_schema, allowed_msgs=allowed_msgs)
 
   print("Start to convert scene, Pls wait!")
-  dataset_to_record(kitti, record_path)
+  dataset_to_record(kitti, record_path, gnss_hz)
   print("Success! Records saved in '{}'".format(record_path))
