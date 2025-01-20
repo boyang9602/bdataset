@@ -102,7 +102,4 @@ def pos_mode2sol_type(pos_mode):
         raise RuntimeError("No corresponding in Novatel solution types!")
 
 def pos_acc2std_dev(acc):
-    """
-    Assumption: acc is 95% confidence, which is around 2x std_dev
-    """
-    return acc / 2
+    return acc
