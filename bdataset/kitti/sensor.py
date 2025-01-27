@@ -81,6 +81,7 @@ class ExtendedOxTs(TextSensor):
     'ax', 'ay', 'az', 'af', 'al', 'au',
     'wx', 'wy', 'wz', 'wf', 'wl', 'wu',
     'pos_accuracy', 'vel_accuracy',
+    'latitude_std_dev', 'longitude_std_dev', 'height_std_dev',
     'navstat', 'numsats', 
     'posmode', 'velmode', 'orimode'
   ]

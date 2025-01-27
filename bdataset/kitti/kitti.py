@@ -72,7 +72,7 @@ class KITTISchema(object):
     path_name = self.oxts_path
     dtype = [
       ('timestamp', 'U29'),
-      ('float_fields', 'f8', (27,)),
+      ('float_fields', 'f8', (30,)),
       ('int_fields', 'i1', (5,))
     ]
     data = np.loadtxt(os.path.join(self.dataroot, path_name), dtype=dtype, delimiter=',', skiprows=1)
@@ -145,14 +145,26 @@ class KITTI(object):
         self._messages.append(msg)
       # gnss, we faked some data
       if 'best_pose' in self._allowed_msgs:
+        if isinstance(oxts, ExtendedOxTs):
+          height_msl = oxts.height_msl
+          undulation = oxts.undulation
+          latitude_std_dev = oxts.latitude_std_dev
+          longitude_std_dev = oxts.longitude_std_dev
+          height_std_dev = oxts.height_std_dev
+        else:
+          height_msl = oxts.alt
+          undulation = 0
+          latitude_std_dev = pos_acc2std_dev(oxts.pos_accuracy)
+          longitude_std_dev = pos_acc2std_dev(oxts.pos_accuracy)
+          height_std_dev = pos_acc2std_dev(oxts.pos_accuracy)
         gnss_data = {
           'lat': oxts.lat,
           'lon': oxts.lon,
-          'height_msl': oxts.height_msl if isinstance(oxts, ExtendedOxTs) else oxts.alt,
-          'undulation': oxts.undulation if isinstance(oxts, ExtendedOxTs) else 0,
-          'latitude_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
-          'longitude_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
-          'height_std_dev': pos_acc2std_dev(oxts.pos_accuracy),
+          'height_msl': height_msl,
+          'undulation': undulation,
+          'latitude_std_dev': latitude_std_dev,
+          'longitude_std_dev': longitude_std_dev,
+          'height_std_dev': height_std_dev,
           'datum_id': gnss_best_pose_pb2.DatumId.WGS84,
           'sol_status': gnss_best_pose_pb2.SolutionStatus.SOL_COMPUTED,
           'sol_type': pos_mode2sol_type(int(oxts.posmode))[1],
