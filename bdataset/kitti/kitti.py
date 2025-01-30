@@ -34,7 +34,8 @@ class KITTISchema(object):
   Args:
       object (_type_): _description_
   """
-  def __init__(self, dataroot=None, oxts_path='oxts.csv') -> None:
+  def __init__(self, dataroot=None, oxts_path='oxts.csv', lidar_sub_path='data') -> None:
+    self.lidar_sub_path = lidar_sub_path
     self.oxts_path = oxts_path
     self.dataroot = dataroot
     self.camera_num = 4
@@ -45,7 +46,7 @@ class KITTISchema(object):
     filenames = self._read_filenames(path_name)
     assert len(timestamps) == len(filenames)
 
-    return [Lidar(t, f) for t, f in zip(timestamps, filenames)]
+    return [Lidar(t, f, self.lidar_sub_path) for t, f in zip(timestamps, filenames)]
 
   def camera_schemes(self):
     schemes = dict()

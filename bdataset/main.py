@@ -47,7 +47,7 @@ def process_record(args):
     if args.dataset == 'n':
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
-      kitti_convert_dataset(args.input, args.output, args.allowed_msgs, args.oxts_path, args.gnss_hz)
+      kitti_convert_dataset(args.input, args.output, args.oxts_path, args.lidar_sub_path, args.gnss_hz, args.allowed_msgs)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -122,8 +122,11 @@ def main(args=sys.argv):
     nargs="+", choices=['velodyne64', 'imu', 'best_pose', 'pose', 'camera', 'lo_imu', 'lo_gnss'],
     default=None, help="The allowed_msgs in record file.")
   parser.add_argument(
-    "-p", "--oxts_path", action="store", type=str, required=False,
+    "-op", "--oxts_path", action="store", type=str, required=False,
     default='oxts.csv', help="The relative path of oxts.")
+  parser.add_argument(
+    "-lsp", "--lidar_sub_path", action="store", type=str, required=False,
+    default='data', help="LiDAR data sub path")
   parser.add_argument(
     "-g", "--gnss_hz", action="store", type=int, required=False,
     default=1, help="The gnss frequency.")
