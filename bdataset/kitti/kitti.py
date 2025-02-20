@@ -43,10 +43,10 @@ class KITTISchema(object):
   def lidar_schemes(self):
     path_name = 'velodyne_points'
     timestamps = self._read_timestamps(path_name)
-    filenames = self._read_filenames(path_name)
+    filenames = self._read_filenames(path_name, self.lidar_sub_path)
     assert len(timestamps) == len(filenames)
 
-    return [Lidar(t, f, self.lidar_sub_path) for t, f in zip(timestamps, filenames)]
+    return [Lidar(t, f) for t, f in zip(timestamps, filenames)]
 
   def camera_schemes(self):
     schemes = dict()
