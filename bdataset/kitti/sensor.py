@@ -24,6 +24,9 @@ def to_timestamp(sensor_time):
   time_sec = datetime.strptime(date_sec, '%Y-%m-%d %H:%M:%S')
   return datetime.timestamp(time_sec) + float(nano_sec)*1e-9
 
+def format_t(t):
+  return datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S") + f'{t%1:.09}'[1:]
+
 """
 Two kinds of sensors:
 1. Sensors with binary data, like pictures or point clouds

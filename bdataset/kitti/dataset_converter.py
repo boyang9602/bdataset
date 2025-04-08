@@ -110,7 +110,7 @@ def dataset_to_record(kitti, record_root_path, gnss_hz):
           record.write(TF_TOPIC, pb_msg, int(t*1e9))
 
 
-def convert_dataset(dataset_path, record_path, oxts_path='oxts.csv', lidar_sub_path='data', gnss_hz=1, allowed_msgs=None):
+def convert_dataset(dataset_path, record_path, oxts_path='oxts.csv', lidar_sub_path='data', gnss_hz=1, warmup_time=0, allowed_msgs=None):
   """Generate apollo record file by KITTI dataset
 
   Args:
@@ -118,7 +118,7 @@ def convert_dataset(dataset_path, record_path, oxts_path='oxts.csv', lidar_sub_p
       record_path (str): record file saved path
   """
   kitti_schema = KITTISchema(dataroot=dataset_path, oxts_path=oxts_path, lidar_sub_path=lidar_sub_path)
-  kitti = KITTI(kitti_schema, allowed_msgs=allowed_msgs)
+  kitti = KITTI(kitti_schema, allowed_msgs=allowed_msgs, warmup_time=warmup_time)
 
   print("Start to convert scene, Pls wait!")
   dataset_to_record(kitti, record_path, gnss_hz)

@@ -47,7 +47,7 @@ def process_record(args):
     if args.dataset == 'n':
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
-      kitti_convert_dataset(args.input, args.output, args.oxts_path, args.lidar_sub_path, args.gnss_hz, args.allowed_msgs)
+      kitti_convert_dataset(args.input, args.output, args.oxts_path, args.lidar_sub_path, args.gnss_hz, args.warmup_time, args.allowed_msgs)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -130,6 +130,10 @@ def main(args=sys.argv):
   parser.add_argument(
     "-g", "--gnss_hz", action="store", type=int, required=False,
     default=1, help="The gnss frequency.")
+  parser.add_argument(
+    "-w", "--warmup_time", action="store", type=int, required=False,
+    default=0, help="Warm up time in seconds, the first frame will be repeated in the expected frequency in the warm up time."
+  )
 
   args = parser.parse_args(args[1:])
   logging.debug(args)
