@@ -112,11 +112,12 @@ class KITTI(object):
   Args:
       object (_type_): _description_
   """
-  def __init__(self, kitti_schema, allowed_msgs=None, warmup_time=0) -> None:
+  def __init__(self, kitti_schema, allowed_msgs=None, warmup_time=0, undulation=False) -> None:
     self._kitti_schema = kitti_schema
     self._messages = []
     self._allowed_msgs = ['velodyne64', 'imu', 'best_pose', 'pose', 'camera'] if allowed_msgs is None else allowed_msgs
     self.warmup_time = warmup_time
+    self.undulation = undulation
     self.read_messages()
 
   def __iter__(self):
@@ -227,8 +228,12 @@ class KITTI(object):
       # gnss, we faked some data
       if 'best_pose' in self._allowed_msgs:
         if isinstance(oxts, ExtendedOxTs):
-          height_msl = oxts.height_msl
-          undulation = oxts.undulation
+          if self.undulation:
+            height_msl = oxts.height_msl
+            undulation = oxts.undulation
+          else:
+            height_msl = oxts.alt
+            undulation = 0
           latitude_std_dev = oxts.latitude_std_dev
           longitude_std_dev = oxts.longitude_std_dev
           height_std_dev = oxts.height_std_dev

@@ -47,7 +47,10 @@ def process_record(args):
     if args.dataset == 'n':
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
-      kitti_convert_dataset(args.input, args.output, args.oxts_path, args.lidar_sub_path, args.gnss_hz, args.warmup_time, args.allowed_msgs)
+      kitti_convert_dataset(args.input, args.output, args.oxts_path, 
+                            args.lidar_sub_path, args.gnss_hz, 
+                            args.warmup_time, args.allowed_msgs,
+                            args.undulation)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -134,6 +137,9 @@ def main(args=sys.argv):
     "-w", "--warmup_time", action="store", type=int, required=False,
     default=0, help="Warm up time in seconds, the first frame will be repeated in the expected frequency in the warm up time."
   )
+  parser.add_argument(
+    "-u", "--undulation", action='store_true', required=False, default=False, 
+    help="Use undulation or not. If not, undulation is 0 and height_msl is alt")
 
   args = parser.parse_args(args[1:])
   logging.debug(args)
