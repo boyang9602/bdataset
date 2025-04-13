@@ -48,9 +48,10 @@ def process_record(args):
       nuscenes_convert_dataset(args.input, args.output)
     elif args.dataset == 'k':
       kitti_convert_dataset(args.input, args.output, args.oxts_path, 
-                            args.lidar_sub_path, args.gnss_hz, 
+                            args.lidar_path, args.gnss_hz, 
                             args.warmup_time, args.allowed_msgs,
-                            args.undulation)
+                            args.undulation, 
+                            args.imu_delay_path, args.gnss_delay_path, args.lidar_delay_path)
     elif args.dataset == 'a':
       apolloscape_convert_dataset(args.input, args.output)
     else:
@@ -128,18 +129,31 @@ def main(args=sys.argv):
     "-op", "--oxts_path", action="store", type=str, required=False,
     default='oxts.csv', help="The relative path of oxts.")
   parser.add_argument(
-    "-lsp", "--lidar_sub_path", action="store", type=str, required=False,
-    default='data', help="LiDAR data sub path")
+    "-lp", "--lidar_path", action="store", type=str, required=False,
+    default='data', help="LiDAR data path")
   parser.add_argument(
-    "-g", "--gnss_hz", action="store", type=int, required=False,
+    "-gh", "--gnss_hz", action="store", type=int, required=False,
     default=1, help="The gnss frequency.")
   parser.add_argument(
-    "-w", "--warmup_time", action="store", type=int, required=False,
+    "-wt", "--warmup_time", action="store", type=int, required=False,
     default=0, help="Warm up time in seconds, the first frame will be repeated in the expected frequency in the warm up time."
   )
   parser.add_argument(
-    "-u", "--undulation", action='store_true', required=False, default=False, 
-    help="Use undulation or not. If not, undulation is 0 and height_msl is alt")
+    "-ud", "--undulation", action='store_true', required=False, default=False, 
+    help="Use undulation or not. If not, undulation is 0 and height_msl is alt"
+  )
+  parser.add_argument(
+    "-idp", "--imu_delay_path", action='store', required=False,
+    help="The file path which stores the delay for each imu frame"
+  )
+  parser.add_argument(
+    "-gdp", "--gnss_delay_path", action='store', required=False,
+    help="The file path which stores the delay for each gnss frame"
+  )
+  parser.add_argument(
+    "-ldp", "--lidar_delay_path", action='store', required=False,
+    help="The file path which stores the delay for each lidar frame"
+  )
 
   args = parser.parse_args(args[1:])
   logging.debug(args)
