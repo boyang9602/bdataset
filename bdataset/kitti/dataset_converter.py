@@ -86,7 +86,7 @@ def dataset_to_record(kitti, record_root_path, gnss_hz):
           raw_data['sol_status'], raw_data['sol_type'],
           raw_data['num_sats_tracked'], raw_data['num_sats_in_solution'],
           raw_data['num_sats_l1'], raw_data['num_sats_multi'],
-          raw_data['datum_id'])
+          raw_data['datum_id'], t=t)
         record.write(GNSS_BEST_POSE_TOPIC, pb_msg, int(t*1e9))
       elif c == "pose":
         # ego pose

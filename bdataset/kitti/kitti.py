@@ -94,21 +94,21 @@ class KITTISchema(object):
     if self.imu_delay_path is None:
       return None
     path = self.imu_delay_path
-    delays = np.loadtxt(os.path.join(self.dataroot, path, dtype=np.float32))
+    delays = np.loadtxt(os.path.join(self.dataroot, path), dtype=np.float32)
     return delays
 
   def gnss_delays(self):
     if self.gnss_delay_path is None:
       return None
     path = self.gnss_delay_path
-    delays = np.loadtxt(os.path.join(self.dataroot, path, dtype=np.float32))
+    delays = np.loadtxt(os.path.join(self.dataroot, path), dtype=np.float32)
     return delays
 
   def lidar_delays(self):
     if self.lidar_delay_path is None:
       return None
     path = self.lidar_delay_path
-    delays = np.loadtxt(os.path.join(self.dataroot, path, dtype=np.float32))
+    delays = np.loadtxt(os.path.join(self.dataroot, path), dtype=np.float32)
     return delays
 
   def _read_timestamps(self, file_path, file_name='timestamps.txt'):
