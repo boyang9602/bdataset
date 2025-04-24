@@ -223,21 +223,17 @@ class KITTI(object):
     full_imu_delays = np.concatenate([warmup_imu_delays, imu_delays])
     return full_gnss_delays, full_imu_delays
 
-  def get_lidar_delays(self, num_lidar, num_warmup_lidar):
+  def get_lidar_delays(self, num_lidar):
     lidar_delays = self._kitti_schema.lidar_delays()
     if lidar_delays is None:
       lidar_delays = np.zeros(num_lidar)
-    warmup_lidar_delays = np.zeros(num_warmup_lidar) + np.sum(lidar_delays[:10]) / 10
-    full_lidar_delays = np.concatenate([warmup_lidar_delays[-10:], lidar_delays])
-    return full_lidar_delays
+    return lidar_delays
 
   def read_messages(self):
     oxts_schemes = self._kitti_schema.oxts_schemes()
     first_oxts = oxts_schemes[0]
     start_time = first_oxts.timestamp
     oxts_frequency = 100
-    interval = 1 / oxts_frequency
-    warmup_start_time = start_time - self.warmup_time
     warmup_oxts_schemes = []
     warmup_oxts_values = self.warmup_oxts_linear(oxts_schemes[:10], self.warmup_time, oxts_frequency)
     for i in range(oxts_frequency * self.warmup_time):
@@ -251,15 +247,8 @@ class KITTI(object):
           continue
         break
       lidar_schemes = lidar_schemes[i:]
-      lidar_frequency = 10
-      interval = 1 / lidar_frequency
-      warmup_lidar_schemes = []
-      first_lidar = lidar_schemes[0]
-      for i in range(lidar_frequency * self.warmup_time):
-        measurement_time = format_t(warmup_start_time + i * interval)
-        warmup_lidar_schemes.append(Lidar(measurement_time, first_lidar.file_path))
-      lidar_delays = self.get_lidar_delays(len(lidar_schemes), len(warmup_lidar_schemes))
-      for i, lidar in enumerate(warmup_lidar_schemes[-10:] + lidar_schemes):
+      lidar_delays = self.get_lidar_delays(len(lidar_schemes))
+      for i, lidar in enumerate(lidar_schemes):
         measurement_time = lidar.timestamp
         raw_data = {
           'measurement_time': measurement_time
