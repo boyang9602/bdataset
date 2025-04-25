@@ -48,7 +48,7 @@ class KITTISchema(object):
 
   def lidar_schemes(self):
     path_name = 'velodyne_points'
-    timestamps = self._read_timestamps(path_name)
+    timestamps = self._read_timestamps(path_name, 'timestamps_end.txt')
     filenames = self._read_filenames(path_name, self.lidar_path)
     assert len(timestamps) == len(filenames)
 
